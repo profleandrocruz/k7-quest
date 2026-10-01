@@ -1,0 +1,29 @@
+# Dependencias e build
+# (o projeto em k7-quest/ tem o proprio .gitignore tambem)
+node_modules/
+dist/
+dist-ssr/
+coverage/
+.vite/
+*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Saves de jogador nunca versionados
+k7-quest-save*.json
+
+# Editores
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Sistema operacional
+.DS_Store
+Thumbs.db

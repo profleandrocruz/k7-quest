@@ -1,0 +1,29 @@
+node_modules
+dist
+dist-ssr
+*.local
+.vite
+coverage
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Tiled gera .tmj + backups
+public/levels/*.tmj.bak
+public/levels/**/*.autosave.tmj
+
+# Nada de save de jogador versionado
+k7-quest-save*.json
