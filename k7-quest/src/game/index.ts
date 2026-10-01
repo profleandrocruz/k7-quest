@@ -24,6 +24,8 @@ export * from './selectors';
 export { BALANCE } from './gameBalance';
 export {
   CAMPAIGN_START_WORLD,
+  ERA_SHORTCUTS,
+  HUD_PUBLISH_EVERY_STEPS,
   MAX_ECHO_FRAMES,
   MAX_FRAME_MS,
   MAX_LOG_ENTRIES,
@@ -31,6 +33,7 @@ export {
   SAVE_KEY,
   SIM_HZ,
   SIM_STEP_MS,
+  TAPE_SHORTCUTS,
   TILE_SIZE,
   WORLD_ORDER,
 } from './constants';

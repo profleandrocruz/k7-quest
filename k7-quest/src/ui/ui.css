@@ -1,0 +1,598 @@
+/**
+ * src/ui/ui.css — A INTERFACE, E SO A INTERFACE.
+ *
+ * Este arquivo nunca decide regra; ele so faz o que a arquitetura pede: DOM para o
+ * HUD (acessivel por padrao, Lente #48), canvas so para o mundo, e `transform`/`opacity`
+ * em vez de `top/left` — animacao em posicao de layout e o caminho classico para o
+ * "engasgo" que mata a sensacao de controle (Lente #53).
+ *
+ * `prefers-reduced-motion` e treated em DOIS lugares de proposito: a media query (para
+ * quem abre a pagina ja com a preferencia) e o atributo `data-reduced-motion` que o App
+ * escreve no elemento raiz (para quem muda a preferencia com o jogo aberto).
+ */
+
+:root {
+  --bg: #0b0e12;
+  --panel: rgba(12, 16, 22, 0.82);
+  --panel-border: rgba(247, 249, 255, 0.14);
+  --ink: #f7f9ff;
+  --ink-dim: #9aa6b2;
+  --danger: #e74c3c;
+  --accent: #00d8d6;
+  --reward: #f2e14c;
+  --focus: #7ad7ff;
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', Consolas, monospace;
+  /* A pagina nao rola: durante o jogo a barra de espaco e do teclado, nao do site. */
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+kbd {
+  display: inline-block;
+  padding: 0.1em 0.4em;
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  background: rgba(247, 249, 255, 0.08);
+  font: inherit;
+  font-size: 0.85em;
+}
+
+/* Foco visivel e OBRIGATORIO: um jogo nao tem direito de sumir com o cursor de teclado
+   so porque a paleta ficou bonita (Lente #48). */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   Esqueleto: canvas em toda a tela, HUD e telas por cima
+   --------------------------------------------------------------------------- */
+
+.app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.canvas-host {
+  position: absolute;
+  inset: 0;
+}
+
+.canvas-host canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+   HUD
+   --------------------------------------------------------------------------- */
+
+.hud {
+  position: absolute;
+  inset: 0;
+  /* O HUD e informativo: ele nunca rouba o clique do canvas. */
+  pointer-events: none;
+}
+
+.hud__panel {
+  position: absolute;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.hud__panel--tl {
+  top: 0.75rem;
+  left: 0.75rem;
+  min-width: 15rem;
+}
+
+.hud__panel--tr {
+  top: 0.75rem;
+  right: 0.75rem;
+  min-width: 15rem;
+  text-align: right;
+}
+
+.hud__panel--bottom {
+  bottom: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: min(34rem, 90vw);
+  text-align: center;
+}
+
+.hud__heading {
+  margin: 0.6rem 0 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.hud__panel--tr .hud__heading:first-child {
+  margin-top: 0;
+}
+
+.hud__meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+}
+
+.hud__tape {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.hud__objective {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.6rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.hud__objective[data-done='true'] .hud__objective-text {
+  text-decoration: line-through;
+  color: var(--ink-dim);
+}
+
+.hud__objective-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-dim);
+}
+
+.hud__status {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: var(--reward);
+}
+
+/* Barras: muda so a largura do preenchimento — sem layout recalculado. */
+.bar {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.bar__label {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.bar__track {
+  height: 0.6rem;
+  border-radius: 999px;
+  background: rgba(247, 249, 255, 0.12);
+  overflow: hidden;
+}
+
+.bar__fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 120ms linear;
+}
+
+.bar__fill[data-tone='danger'] {
+  background: var(--danger);
+}
+
+.bar__fill[data-tone='accent'] {
+  background: var(--accent);
+}
+
+.bar__value {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-dim);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  justify-content: flex-end;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  font-size: 0.75rem;
+}
+
+.chip[data-active='true'] {
+  background: rgba(247, 249, 255, 0.14);
+  color: var(--ink);
+}
+
+.chip[data-locked='true'] {
+  opacity: 0.45;
+}
+
+.chip__key {
+  padding: 0 0.3em;
+  font-size: 0.7rem;
+}
+
+.chip__lock {
+  color: var(--ink-dim);
+}
+
+/* ---------------------------------------------------------------------------
+   Telas (overlays)
+   --------------------------------------------------------------------------- */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(5, 8, 12, 0.72);
+  backdrop-filter: blur(3px);
+  /* O container recebe o foco para o leitor de tela; nao pode mostrar contorno. */
+  outline: none;
+}
+
+.overlay[data-variant='bottom'] {
+  align-items: flex-end;
+  padding-bottom: 1.2rem;
+  background: linear-gradient(to top, rgba(5, 8, 12, 0.9), rgba(5, 8, 12, 0));
+  backdrop-filter: none;
+}
+
+.card {
+  width: min(32rem, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.6rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  background: var(--panel);
+  text-align: center;
+}
+
+.card--wide {
+  width: min(46rem, 100%);
+}
+
+.card__eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.card__title {
+  margin: 0.35rem 0 0.5rem;
+  font-size: clamp(1.3rem, 4vw, 2rem);
+  letter-spacing: -0.01em;
+}
+
+.card__lead {
+  margin: 0 0 1rem;
+  color: var(--ink-dim);
+  line-height: 1.5;
+}
+
+.card__note {
+  margin: 0.4rem 0;
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+}
+
+.card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+  margin-top: 1.2rem;
+}
+
+.btn {
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: rgba(247, 249, 255, 0.06);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: transform 120ms ease, background-color 120ms ease;
+}
+
+.btn:hover {
+  background: rgba(247, 249, 255, 0.14);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn--primary {
+  border-color: var(--accent);
+  background: rgba(0, 216, 214, 0.16);
+  font-weight: 600;
+}
+
+.btn--ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink-dim);
+}
+
+/* ---------------------------------------------------------------------------
+   Titulo: avatares e controles
+   --------------------------------------------------------------------------- */
+
+.avatars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+  margin: 0 0 1.2rem;
+  padding: 0;
+  border: 0;
+}
+
+.avatars__legend {
+  width: 100%;
+  margin-bottom: 0.4rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.avatar {
+  flex: 1 1 12rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  background: rgba(247, 249, 255, 0.04);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.avatar[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: rgba(0, 216, 214, 0.14);
+}
+
+.avatar__name {
+  font-weight: 600;
+}
+
+.avatar__tagline {
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.3rem 1rem;
+  margin: 1.4rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--panel-border);
+  text-align: left;
+}
+
+.controls__row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.controls__row dd {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+}
+
+/* ---------------------------------------------------------------------------
+   Menus de escolha
+   --------------------------------------------------------------------------- */
+
+.choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.choice {
+  width: 100%;
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  background: rgba(247, 249, 255, 0.04);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 120ms ease, background-color 120ms ease;
+}
+
+.choice:hover:not(:disabled) {
+  background: rgba(247, 249, 255, 0.1);
+}
+
+.choice:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.choice:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.choice[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: rgba(0, 216, 214, 0.12);
+}
+
+.choice__key {
+  justify-self: start;
+}
+
+.choice__name {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.choice__detail,
+.choice__tradeoff,
+.choice__signature {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--ink-dim);
+}
+
+.choice__tradeoff {
+  color: var(--reward);
+}
+
+/* ---------------------------------------------------------------------------
+   Dialogo
+   --------------------------------------------------------------------------- */
+
+.dialogue {
+  width: min(48rem, 100%);
+  padding: 1.1rem 1.3rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.dialogue__speaker {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.dialogue__text {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.dialogue__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.8rem;
+}
+
+.dialogue__count {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-dim);
+}
+
+/* ---------------------------------------------------------------------------
+   Digesto
+   --------------------------------------------------------------------------- */
+
+.digest {
+  display: grid;
+  gap: 0.3rem;
+  margin: 1rem 0 0;
+  text-align: left;
+}
+
+.digest__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px dashed var(--panel-border);
+}
+
+.digest__row dt {
+  font-size: 0.82rem;
+  color: var(--ink-dim);
+}
+
+.digest__row dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.digest__row--reward dd {
+  color: var(--reward);
+}
+
+/* ---------------------------------------------------------------------------
+   Movimento reduzido — a preferencia vence o polimento (Lente #48)
+   --------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+[data-reduced-motion='true'] *,
+[data-reduced-motion='true'] *::before,
+[data-reduced-motion='true'] *::after {
+  animation: none !important;
+  transition: none !important;
+}

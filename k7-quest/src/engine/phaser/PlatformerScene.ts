@@ -17,7 +17,7 @@
  */
 import Phaser from 'phaser';
 import { BALANCE, ERAS, TILE_SIZE, hostileKinds } from '../../game';
-import type { CollisionGrid, EraId, EraLayer, GameState } from '../../game';
+import type { CollisionGrid, Entity, EraId, EraLayer, GameState } from '../../game';
 import { prefersReducedMotion } from '../reducedMotion';
 import { getGameState } from '../store';
 
@@ -48,11 +48,47 @@ function toHex(css: string, fallback = 0x555555): number {
   return Number.isNaN(parsed) ? fallback : parsed;
 }
 
+/**
+ * A cor de uma entidade, com uma regra so: PERIGO e RECOMPENSA nao mudam de era.
+ *
+ * O `accent` entra so para o que nao tem significado proprio (portais, blocos,
+ * estrutura). E a unica coisa que a paleta da era consegue mudar.
+ */
+function entityColor(entity: Entity, accent: number): number {
+  if (hostileKinds().has(entity.kind)) return COLOR.danger;
+
+  switch (entity.kind) {
+    case 'pixelFragment':
+      return COLOR.reward;
+    case 'floppy':
+      return COLOR.rare;
+    case 'lostMemory':
+      return COLOR.memory;
+    case 'checkpoint':
+      return COLOR.checkpoint;
+    case 'goal':
+      return COLOR.goal;
+    case 'cartridge':
+    case 'echoAnchor':
+    case 'bossGate':
+    default:
+      return accent;
+  }
+}
+
 export class PlatformerScene extends Phaser.Scene {
   private gridLayer!: Phaser.GameObjects.Graphics;
   private entityLayer!: Phaser.GameObjects.Graphics;
   private echoLayer!: Phaser.GameObjects.Graphics;
   private playerBox!: Phaser.GameObjects.Rectangle;
+  /**
+   * Quadradinho que marca para ONDE o jogador olha.
+   *
+   * `Rectangle` do Phaser nao tem espelhamento, e um corpo retangular e simetrico nao
+   * comunica direcao nenhuma — sem isto, andar para a esquerda e para a direita e
+   * visualmente a MESMA coisa (Lente #53). Um ponto na borda da frente resolve.
+   */
+  private facingMark!: Phaser.GameObjects.Rectangle;
 
   // Chaves de cache: so redesenhamos o que MUDOU. O tilemap e estatico por era, e
   // redesenhar ~900 tiles por quadro seria desperdicio puro.
@@ -77,6 +113,11 @@ export class PlatformerScene extends Phaser.Scene {
       .setDepth(DEPTH.player)
       .setStrokeStyle(1, COLOR.playerOutline);
 
+    this.facingMark = this.add
+      .rectangle(0, 0, 3, 3, COLOR.playerOutline)
+      .setOrigin(0.5, 0.5)
+      .setDepth(DEPTH.player);
+
     this.reducedMotion = prefersReducedMotion();
     this.scale.on(Phaser.Scale.Events.RESIZE, () => this.applyZoom());
 
@@ -85,7 +126,7 @@ export class PlatformerScene extends Phaser.Scene {
     this.applyZoom();
   }
 
-  update(): void {
+  override update(): void {
     const state = getGameState();
     const layer = state.level.eras[state.player.era];
     if (!layer) return;
@@ -102,7 +143,84 @@ export class PlatformerScene extends Phaser.Scene {
     this.cameras.main.setZoom(zoom);
   }
 
+  // -------------------------------------------------------------------------
+  // Atores: redesenhados a cada quadro, porque sao a unica parte do canvas que
+  // se move. Tudo entra num unico `clear()` por camada — tres `clear()` por
+  // quadro, nunca um por objeto.
+  // -------------------------------------------------------------------------
 
+  /**
+   * COR DE PERIGO E RECOMPENSA e a MESMA em todas as eras (Lente #59).
+   *
+   * Por que: a era muda o CENARIO, nunca o SIGNIFICADO. Se um fragmento fosse
+   * amarelo na 8bit e vermelho na 32bit, o jogador teria que reaprender o jogo
+   * cinco vezes para nao errar o que importa.
+   */
+  private drawEntities(state: GameState, layer: EraLayer): void {
+    const g = this.entityLayer;
+    g.clear();
+
+    const accent = toHex(ERAS[layer.era].palette.accent);
+
+    for (const entity of layer.entities) {
+      // Coletado sumiu de vez: redesenhar apagado seria mentir sobre o mundo.
+      if (entity.collected === true) continue;
+      // `era === null` significa "existe em todas"; as de outra era nao aparecem.
+      if (entity.era !== null && entity.era !== layer.era) continue;
+
+      const { x, y } = entity.position;
+      const { x: w, y: h } = entity.size;
+      const hostile = hostileKinds().has(entity.kind);
+
+      g.fillStyle(entityColor(entity, accent), 1);
+      g.fillRect(x, y, w, h);
+
+      // Inimigo sempre contornado: o contorno e o que diz "isto me machuca" sem
+      // precisar de texto nem de som (Lente #57).
+      if (hostile || state.debug.showHitboxes) {
+        g.lineStyle(1, COLOR.playerOutline);
+        g.strokeRect(x, y, w, h);
+      }
+    }
+  }
+
+  /** Ecos ativos: a MESMA vida, so que vista de lado (Lentes #8, #58). */
+  private drawEchoes(state: GameState): void {
+    const g = this.echoLayer;
+    g.clear();
+
+    for (const body of Object.values(state.echoBodies)) {
+      const { x, y } = body.player.position;
+      // Meia opacidade: o eco e MEMORIA do jogador, nao o jogador. A diferenca
+      // precisa caber num unico quadro, antes de qualquer rotulo.
+      g.fillStyle(COLOR.echo, 0.45);
+      g.fillRect(x, y, body.player.size.x, body.player.size.y);
+    }
+  }
+
+  private drawPlayer(state: GameState): void {
+    const player = state.player;
+    const box = this.playerBox;
+
+    // A caixa E o alvo do `startFollow`: e por isso que ela e movida aqui, e nao
+    // em `syncWorld`. Camera e desenho nesta ordem para o follow nunca mirar um
+    // jogador com uma posicao de quadro atrasada.
+    box.setPosition(player.position.x, player.position.y);
+    box.setSize(player.size.x, player.size.y);
+
+    // O marcador fica na BORDA da frente do corpo: e o que diz "para onde".
+    const centerX = player.position.x + player.size.x / 2;
+    const centerY = player.position.y + player.size.y / 2;
+    const toward = player.facing === 'left' ? -1 : 1;
+    this.facingMark.setPosition(centerX + toward * (player.size.x / 2 - 2), centerY);
+
+    // Piscar ao levar dano: prova de que o golpe CONTOU. Desligado com movimento
+    // reduzido — piscar e exatamente o tipo de movimento que incomoda (Lente #48).
+    const damaged = player.invulnerableMs > 0;
+    const flicker = damaged && !this.reducedMotion && Math.floor(this.time.now / 70) % 2 === 0;
+    box.setAlpha(flicker ? 0.35 : 1);
+    this.facingMark.setAlpha(flicker ? 0.35 : 1);
+  }
 
   // -------------------------------------------------------------------------
   // Mundo: paleta, tilemap e camera (redesenhados so quando algo muda)
