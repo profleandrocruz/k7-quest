@@ -7,6 +7,13 @@ coverage/
 .vite/
 *.local
 
+# Materiais de referencia NAO versionados.
+#
+# The Art of Game Design - Jesse Schell (Schell Games) e um livro COMERCIALIZADO.
+# Ele e material de referencia, nao obra deste projeto, e nao deve ser publicado
+# junto. Ver a secao "Direitos autorais" do README para o procedimento de remocao.
+the-art-of-game-design-a-book-of-lenses_3.pdf
+
 # Logs
 logs/
 *.log
@@ -14,6 +21,10 @@ npm-debug.log*
 
 # Saves de jogador nunca versionados
 k7-quest-save*.json
+
+# Notas de trabalho pessoal.
+# Sem aspas: o gitignore nao entende "aspas" — elas seriam parte do nome do arquivo.
+Novo(a) Documento de Texto.txt
 
 # Editores
 .vscode/*
