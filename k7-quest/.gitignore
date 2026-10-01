@@ -21,7 +21,14 @@ npm-debug.log*
 *.sln
 *.sw?
 
-# Tiled gera .tmj + backups
+# Saida GERADA do exportador do Tiled (npm run levels:export).
+#
+# Sao artefatos derivados de src/game/content/levels/. Versiona-los duplicaria
+# cada mudanca de fase num .diff ilegivel, e o codigo continua sendo a fonte da
+# verdade (Lente #90). O exportador recria a pasta inteira em um comando.
+public/levels/
+
+# Backups do Tiled, caso o mapa seja editado antes do importador existir
 public/levels/*.tmj.bak
 public/levels/**/*.autosave.tmj
 
