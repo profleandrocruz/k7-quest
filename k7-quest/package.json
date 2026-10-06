@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "levels:export": "node tools/export-tiled-levels.mjs"
+    "levels:export": "node tools/export-tiled-levels.mjs",
+    "levels:import": "node tools/import-tiled-levels.mjs"
   },
   "dependencies": {
     "@react-three/fiber": "^9.0.0",

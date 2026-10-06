@@ -24,7 +24,6 @@ k7-quest-save*.json
 
 # Notas de trabalho pessoal.
 # Sem aspas: o gitignore nao entende "aspas" — elas seriam parte do nome do arquivo.
-Novo(a) Documento de Texto.txt
 
 # Editores
 .vscode/*

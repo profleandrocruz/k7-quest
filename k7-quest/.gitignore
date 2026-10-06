@@ -28,9 +28,13 @@ npm-debug.log*
 # verdade (Lente #90). O exportador recria a pasta inteira em um comando.
 public/levels/
 
-# Backups do Tiled, caso o mapa seja editado antes do importador existir
+# Backups e autosaves do Tiled: sao lixo de edicao, nunca conteudo.
 public/levels/*.tmj.bak
 public/levels/**/*.autosave.tmj
+
+# ATENCAO: `src/game/content/levels/tiled/` NAO e ignorado, e e de proposito.
+# As fases importadas do Tiled sao CODIGO (passam pelo mesmo validador e pelos mesmos
+# testes das escritas a mao) e por isso ficam versionadas, com o resto de src/.
 
 # Nada de save de jogador versionado
 k7-quest-save*.json

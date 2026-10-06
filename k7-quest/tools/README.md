@@ -6,11 +6,15 @@ caracteres por linha num editor de texto não é autoria de fase, é castigo.
 
 O Tiled entra aqui como **editor visual**, nunca como fonte da verdade.
 
-## O comando
+## Os dois comandos
 
 ```bash
-npm run levels:export
+npm run levels:export                 # codigo  -> public/levels/*.tmj
+npm run levels:import                 # public/levels/*.tmj -> "o que mudou?"
+npm run levels:import -- --write      # public/levels/*.tmj -> codigo
 ```
+
+### `export` — mostro o jogo no editor visual
 
 Gera em `public/levels/`:
 
@@ -39,6 +43,49 @@ Saída real hoje:
 
 Repare que `w1-l3-bosque` tem contagens **diferentes** por era (7 e 8). Está certo: aquela fase tem um
 fragmento e um floppy exclusivos de cada era, e o exportador respeita isso.
+
+### `import` — trago o mapa editado de volta para o código
+
+O `manifest.json` já carrega o `levelId` de cada mapa justamente para permitir essa leitura.
+
+```bash
+npm run levels:import
+```
+
+Sem argumento, **não escreve nada**: ele só compara e diz o que mudou.
+
+```
+[import] 6 mapa(s) -> 4 fase(s)
+
+[import] w1-l3-bosque:
+  8bit linha 7 coluna 30: "#" -> "."
+  spawn NOVO: pixelFragment@400,144
+
+[import] o Tiled tem mudancas ainda NAO publicadas no codigo.
+[import] para publicar:  npm run levels:import -- --write
+```
+
+Só com `--write` ele gera `src/game/content/levels/tiled/*.ts`.
+
+**Duas garantias que valem mais que o comando:**
+
+1. **Fase importada passa no mesmo validador** das fases escritas à mão
+   (`levels/validate.ts`). Importar do Tiled não cria um caminho sem teste — só um caminho mais
+   curto. Se a edição no mapa selar o objetivo, o importador recusa e mostra a fase reprovada.
+2. **Exportar e importar são a mesma regra.** A conversão mora em
+   `src/game/content/levels/tiledFormat.ts`, e os dois scripts carregam esse mesmo módulo. Não
+   existem duas implementações para divergirem em silêncio.
+
+### O que o importador NÃO faz
+
+- **Não apaga o comentário de design.** As fases do slice têm comentários que explicam *por que* o
+  mapa é assim (a alternância de eras do bosque, as duas soluções do castelo). Por isso o código
+  importado vai para `content/levels/tiled/` e não por cima do `world1.ts`. O `levels/index.ts`
+  escolhe entre os dois explicitamente — nada é sobrescrito em silêncio.
+- **Não adivinha a identidade de um spawn.** Um spawn sem `era` aparece nas camadas de *todas* as
+  eras. O importador decide: presente em todas as camadas → global; em parte delas → exclusivo
+  daquelas. É a regra que `buildEntities` usa, e inverter essa leitura faria um coletável contar
+  duas vezes (ou sumir ao trocar de era).
 
 ## Como abrir no Tiled
 
@@ -70,19 +117,35 @@ Propriedades do mapa (`Map Properties`) carregam o contexto do design: `k7LevelI
 | 6 | `G` | objetivo da fase |
 | 7 | `P` | plataforma móvel |
 
-O índice **é** o GID do Tiled (`GID = índice + 1`), e a ordem está em `tools/pngTileset.mjs`.
+O índice **é** o GID do Tiled (`GID = índice + 1`). A ordem vem de `TILE_LEGEND` em
+`src/game/rules/tilemap.ts` (a legenda do domínio) — e `tools/pngTileset.mjs` só desenha o PNG.
 
 > **Regra de ouro do autor:** só adicione tiles **no fim** da lista. Inserir no meio muda o GID de
-> todos os tiles seguintes e quebra silenciosamente todos os mapas já exportados.
+> todos os tiles seguintes e quebra silenciosamente todos os mapas já exportados. O `export`
+> compara as duas listas e **falha o comando** se elas divergirem, justamente porque essa
+> divergência é invisível no mapa e corrói o terreno em silêncio.
 
-## Onde isso ainda NÃO vai
+## Onde a conversão mora (e por que não está em `tools/`)
 
-Direção inversa — editar no Tiled e devolver ao código — **não existe ainda**. É o item 2 do
-`docs/loops.md`. O `manifest.json` já carrega o `levelId` de cada mapa justamente para permitir essa
-leitura.
+A conversão `.tmj` ↔ fase está em **`src/game/content/levels/tiledFormat.ts`**, não em `tools/`.
 
-Até lá, o ciclo é: **editar `src/game/content/levels/world1.ts` → rodar os testes → exportar para
-conferir no Tiled**. O que o Tiled mostrar é sempre o que o jogo faz — nunca o contrário.
+O motivo é o do ADR 0001 aplicado ao tooling: `tools/` faz I/O e não pode ser testado; a *regra*
+pode. Então:
+
+- `tools/export-tiled-levels.mjs` e `tools/import-tiled-levels.mjs` carregam **o mesmo módulo**;
+- a ida-e-volta é provada por `tiledFormat.test.ts` (12 testes, incluindo "toda fase do slice
+  volta idêntica");
+- ninguém precisa acreditar que dois scripts concordam — eles chamam a mesma função.
+
+## O que o Tiled ainda não sabe fazer
+
+O ciclo fechado é: **editar no Tiled → `npm run levels:import` (confere) → `--write` (publica) →
+`npm test`**. O que o Tiled mostra continua vindo do jogo, e o que o jogo roda passa pelo mesmo
+validador de sempre.
+
+Continua fora do alcance do editor visual: **diálogo, objetivos e recompensas são metadados** que
+viajam em `k7Meta` (JSON), mas não são *editáveis* como Property no Tiled. Um mapa ainda não é um
+`GameDesignDocument`: o GDD é o que define a **tese** de uma fase, e isso continua no código.
 
 ## Por que o script usa o resolver do Vite
 

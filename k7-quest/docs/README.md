@@ -26,6 +26,7 @@ consequências, alternativas rejeitadas, e quando revisitar.
 | [0005](./decisions/0005-recompensas-das-fases.md) | Recompensas do slice anteciparam a Fita Pop | Aceita (temporária) |
 | [0006](./decisions/0006-escopo-do-chefe.md) | A arena do Menino Eterno está pronta; a luta multi-forma não | Aceita |
 | [0007](./decisions/0007-efeitos-de-habilidade.md) | Quatro efeitos implementados; o resto é `passive` com nota | Aceita |
+| [0008](./decisions/0008-tiled-publica-codigo.md) | O Tiled publica código; o código continua decidindo | Aceita |
 
 ### Como citar uma decisão no código
 

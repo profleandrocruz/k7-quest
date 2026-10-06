@@ -13,6 +13,9 @@ mais fácil de codar.
 - [x] **Vertical slice do Mundo 1** em dados: 4 fases, incluindo a que alterna eras
 - [x] **Validador de fases**: nenhuma fase entra no jogo sem objetivo alcançável (Lente #30)
 - [x] **Fases exportáveis para o Tiled** (`npm run levels:export`)
+- [x] **Ciclo fechado com o Tiled**: editar no mapa publica código de volta
+      (`npm run levels:import`), com o mesmo validador e a mesma regra de conversão
+      (ADR 0008)
 
 ## 1. Testar o vertical slice com gente  ← o marco mais importante do projeto
 
@@ -31,15 +34,15 @@ depende da resposta. Nenhuma quantidade de conteúdo conserta um sistema de eras
 
 **Sai daqui:** a primeira linha em `docs/playtests.md`, e números reais em `gameBalance.ts`.
 
-## 2. Importador do Tiled → código
+## 2. Importador do Tiled → código — **feito, ver ADR 0008**
 
 **Pergunta:** *"o designer consegue editar no Tiled sem medo de quebrar o jogo?"*
 
-O exportador já existe (`tools/export-tiled-levels.mjs`, `tools/README.md`). Falta a direção
-inversa: ler `.tmj` de volta para `src/game/content/levels/`, com o validador rodando depois.
-
-**Por que importa:** o `manifest.json` já carrega o `levelId` de cada mapa. Sem o importador, o Tiled
-é um visualizador — e um designer que não pode publicar não autoria.
+Respondeu `npm run levels:import` + ADR 0008. O que ficou de fora, e é a continuação natural
+desse item: **fase nova** desenhada direto no Tiled. Hoje o importador existe e é testado, mas
+nenhuma fase do slice foi *autoralmente* criada por ele — o que foi provado até agora é a
+ida-e-volta, não a autoria do zero. Criar `w2-l1` em branco no Tiled e publicar sem tocar em
+`src/` é o teste que falta para esta pergunta estar realmente fechada.
 
 ## 3. A luta multi-forma do Menino Eterno
 
