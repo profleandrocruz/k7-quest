@@ -16,6 +16,7 @@ interface AvatarCard {
   id: AvatarId;
   name: string;
   tagline: string;
+  portrait?: string | null;
 }
 
 /**
@@ -24,7 +25,7 @@ interface AvatarCard {
  * escrita para os dois (Lente #90 — honestidade de escopo).
  */
 const AVATARS: readonly AvatarCard[] = [
-  { id: 'solaris', name: 'Janus Solaris', tagline: 'O avatar padrao do vertical slice.' },
+  { id: 'solaris', name: 'Janus Solaris', tagline: 'O avatar padrao do vertical slice.', portrait: '/characters/lucid-origin_16-bit_SNES_pixel_art_sprite_sheet_of_Janus_Solaris_retro-futuristic_platform_ga-0.jpg' },
   { id: 'luna', name: 'Janus Luna', tagline: 'O mesmo mundo, outra escolha de identidade.' },
 ];
 
@@ -59,6 +60,7 @@ export default function TitleScreen() {
               aria-pressed={avatar === option.id}
               onClick={() => setSelectedAvatar(option.id)}
             >
+              {option.portrait ? <img className="avatar__portrait" src={option.portrait} alt={option.name} /> : null}
               <span className="avatar__name">{option.name}</span>
               <span className="avatar__tagline">{option.tagline}</span>
             </button>

@@ -407,9 +407,10 @@ kbd {
   font-weight: 600;
 }
 
-.avatar__tagline {
-  font-size: 0.78rem;
-  color: var(--ink-dim);
+.avatar__portrait {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 .controls {
