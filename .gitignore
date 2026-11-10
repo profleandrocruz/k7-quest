@@ -37,3 +37,24 @@ k7-quest-save*.json
 # Sistema operacional
 .DS_Store
 Thumbs.db
+
+# ---------------------------------------------------------------------------
+# Scripts e imagens de análise temporária (workspace local)
+# Arquivos que começam com underline são descartáveis de investigação e
+# não devem ser compartilhados com colaboradores.
+# ---------------------------------------------------------------------------
+_*.py
+_*.mjs
+_*.txt
+_*.png
+_*.jpg
+_*.jpeg
+_*.ts
+headstat.txt
+view_v_*
+
+# ---------------------------------------------------------------------------
+# Pasta public duplicada na raiz do workspace.
+# O app consome os assets de k7-quest/public/; a cópia na raiz é redundante.
+# ---------------------------------------------------------------------------
+/public/
